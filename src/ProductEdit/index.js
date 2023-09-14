@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useState } from "react";
 import {
     Container,
     Title,
@@ -10,27 +9,13 @@ import {
     Divider,
     Button,
     Group,
+    Image,
 } from "@mantine/core";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
 import { useQuery, useMutation } from "@tanstack/react-query";
-
-const getProduct = async (id) => {
-    const response = await axios.get("http://localhost:5000/products/" + id);
-    return response.data;
-};
-
-const updateProduct = async ({ id, data }) => {
-    const response = await axios({
-        method: "PUT",
-        url: "http://localhost:5000/products/" + id,
-        headers: {
-            "Content-Type": "application/json",
-        },
-        data: data,
-    });
-    return response.data;
-};
+import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
+import { getProduct, updateProduct, uploadProductImage } from "../api/products";
 
 function ProductEdit() {
     const { id } = useParams();
@@ -39,6 +24,8 @@ function ProductEdit() {
     const [description, setDescription] = useState("");
     const [price, setPrice] = useState("");
     const [category, setCategory] = useState("");
+    const [image, setImage] = useState("");
+    const [uploading, setUploading] = useState(false);
     const { isLoading } = useQuery({
         queryKey: ["product", id],
         queryFn: () => getProduct(id),
@@ -47,6 +34,7 @@ function ProductEdit() {
             setDescription(data.description);
             setPrice(data.price);
             setCategory(data.category);
+            setImage(data.image);
         },
     });
 
@@ -76,8 +64,27 @@ function ProductEdit() {
                 description: description,
                 price: price,
                 category: category,
+                image: image,
             }),
         });
+    };
+
+    const uploadMutaion = useMutation({
+        mutationFn: uploadProductImage,
+        onSuccess: (data) => {
+            setImage(data.image_url);
+        },
+        onError: (error) => {
+            notifications.show({
+                title: error.response.data.message,
+                color: "red",
+            });
+        },
+    });
+
+    const handleImageUpload = (files) => {
+        uploadMutaion.mutate(files[0]);
+        setUploading(true);
     };
 
     return (
@@ -96,6 +103,36 @@ function ProductEdit() {
                     withAsterisk
                     onChange={(event) => setName(event.target.value)}
                 />
+                <Space h="20px" />
+                <Divider />
+                <Space h="20px" />
+                {image && image !== "" ? (
+                    <>
+                        <Image
+                            src={"http://localhost:5000/" + image}
+                            width="100%"
+                        />
+                        <Button
+                            color="dark"
+                            mt="15px"
+                            onClick={() => setImage("")}
+                        >
+                            Remove Image
+                        </Button>
+                    </>
+                ) : (
+                    <Dropzone
+                        multiple={false}
+                        accept={IMAGE_MIME_TYPE}
+                        onDrop={(files) => {
+                            handleImageUpload(files);
+                        }}
+                    >
+                        <Title order={4} align="center" py="20px">
+                            Click to upload or Drag image to upload
+                        </Title>
+                    </Dropzone>
+                )}
                 <Space h="20px" />
                 <Divider />
                 <Space h="20px" />
