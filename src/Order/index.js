@@ -81,6 +81,7 @@ export default function Orders() {
     return (
         <>
             <Container size="xl">
+                <Space h="50px" />
                 <Header title="My Orders" page="orders" />
                 <Space h="35px" />
                 <Table>

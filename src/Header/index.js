@@ -4,6 +4,7 @@ export default function Header({ title, page = "" }) {
     return (
         <>
             <Title align="center">{title}</Title>
+
             <Space h="20px" />
             <Group position="center">
                 <Button
@@ -26,6 +27,20 @@ export default function Header({ title, page = "" }) {
                     variant={page === "order" ? "filled" : "light"}
                 >
                     My Orders
+                </Button>
+                <Button
+                    component={Link}
+                    to="/login"
+                    variant={page === "login" ? "filled" : "light"}
+                >
+                    Login
+                </Button>
+                <Button
+                    component={Link}
+                    to="/signIn"
+                    variant={page === "signin" ? "filled" : "light"}
+                >
+                    Sign In
                 </Button>
             </Group>
             <Space h="20px" />

@@ -98,6 +98,7 @@ export default function Cart() {
 
     return (
         <Container>
+            <Space h="50px" />
             <Header title="Cart" page="cart" />
             <Space h="35px" />
             <Table highlightOnHover>
