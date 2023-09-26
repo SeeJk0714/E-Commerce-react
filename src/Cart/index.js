@@ -1,6 +1,7 @@
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { getCartItems, removeItemsFromCart } from "../api/cart";
+import { Link } from "react-router-dom";
 import {
     Container,
     Title,
@@ -216,7 +217,13 @@ export default function Cart() {
                 >
                     Delete Selected
                 </Button>
-                <Button>Checkout</Button>
+                <Button
+                    component={Link}
+                    to="/checkout"
+                    disabled={cart.length > 0 ? false : true}
+                >
+                    Checkout
+                </Button>
             </Group>
         </Container>
     );

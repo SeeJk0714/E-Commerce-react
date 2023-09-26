@@ -4,7 +4,9 @@ import Home from "./Home";
 import ProductAdd from "./ProductAdd";
 import ProductEdit from "./ProductEdit";
 import Cart from "./Cart";
-
+import Checkout from "./Checkout";
+import Orders from "./Order";
+import PaymentVerification from "./PaymentVerification";
 function App() {
     return (
         <Router>
@@ -13,6 +15,12 @@ function App() {
                 <Route path="/product_add" element={<ProductAdd />} />
                 <Route path="/products/:id" element={<ProductEdit />} />
                 <Route path="/cart" element={<Cart />} />
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/orders" element={<Orders />} />
+                <Route
+                    path="/verify-payment"
+                    element={<PaymentVerification />}
+                />
             </Routes>
         </Router>
     );

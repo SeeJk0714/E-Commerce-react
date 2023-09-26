@@ -41,7 +41,7 @@ function Products() {
         - perPage is updated OR
         - currentPage is updated
     */
-        // method 1:
+        //// method 1:
         // if (category !== "") {
         //   const filteredProducts = products.filter((p) => p.category === category);
         //   setCurrentProducts(filteredProducts);

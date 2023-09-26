@@ -22,7 +22,7 @@ export default function Header({ title, page = "" }) {
                 </Button>
                 <Button
                     component={Link}
-                    to="/"
+                    to="/orders"
                     variant={page === "order" ? "filled" : "light"}
                 >
                     My Orders
