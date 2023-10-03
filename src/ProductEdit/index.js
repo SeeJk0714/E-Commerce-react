@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
     Container,
     Title,
@@ -15,9 +15,12 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
+import { useCookies } from "react-cookie";
 import { getProduct, updateProduct, uploadProductImage } from "../api/products";
 
 function ProductEdit() {
+    const [cookies] = useCookies(["currentUser"]);
+    const { currentUser } = cookies;
     const { id } = useParams();
     const navigate = useNavigate();
     const [name, setName] = useState("");
@@ -37,6 +40,14 @@ function ProductEdit() {
             setImage(data.image);
         },
     });
+
+    const isAdmin = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "admin"
+            ? true
+            : false;
+    }, [cookies]);
 
     const updateMutation = useMutation({
         mutationFn: updateProduct,
@@ -66,6 +77,7 @@ function ProductEdit() {
                 category: category,
                 image: image,
             }),
+            token: currentUser ? currentUser.token : "",
         });
     };
 
@@ -154,7 +166,7 @@ function ProductEdit() {
                     precision={2}
                     description="The price of the product"
                     withAsterisk
-                    onChange={(event) => setPrice(event.target.value)}
+                    onChange={setPrice}
                 />
                 <Space h="20px" />
                 <Divider />
@@ -168,9 +180,11 @@ function ProductEdit() {
                     onChange={setCategory}
                 />
                 <Space h="20px" />
-                <Button fullWidth onClick={handleUpdateProduct}>
-                    Edit Product
-                </Button>
+                {isAdmin ? (
+                    <Button fullWidth onClick={handleUpdateProduct}>
+                        Edit Product
+                    </Button>
+                ) : null}
             </Card>
             <Space h="20px" />
             <Group position="center">

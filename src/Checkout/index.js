@@ -1,6 +1,7 @@
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { getCartItems, clearCartItems } from "../api/cart";
+import { useCookies } from "react-cookie";
 import {
     Container,
     Title,
@@ -21,10 +22,12 @@ import Header from "../Header";
 import { createOrder } from "../api/order";
 
 export default function Checkout() {
+    const [cookies] = useCookies(["currentUser"]);
+    const { currentUser } = cookies;
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
+    const [name, setName] = useState(currentUser ? currentUser.name : "");
+    const [email, setEmail] = useState(currentUser ? currentUser.email : "");
     const { data: cart = [] } = useQuery({
         queryKey: ["cart"],
         queryFn: getCartItems,

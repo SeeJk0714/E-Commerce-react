@@ -8,7 +8,8 @@ import Checkout from "./Checkout";
 import Orders from "./Order";
 import PaymentVerification from "./PaymentVerification";
 import Login from "./Login";
-import SignIn from "./SignIn";
+import SignUp from "./SignUp";
+
 function App() {
     return (
         <Router>
@@ -24,7 +25,7 @@ function App() {
                     element={<PaymentVerification />}
                 />
                 <Route path="/login" element={<Login />} />
-                <Route path="/signIn" element={<SignIn />} />
+                <Route path="/signup" element={<SignUp />} />
             </Routes>
         </Router>
     );

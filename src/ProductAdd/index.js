@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useCookies } from "react-cookie";
 import {
     Container,
     Title,
@@ -18,6 +19,8 @@ import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
 import { addProduct, addProductImage } from "../api/products";
 
 function ProductAdd() {
+    const [cookies] = useCookies(["currentUser"]);
+    const { currentUser } = cookies;
     const navigate = useNavigate();
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
@@ -25,6 +28,14 @@ function ProductAdd() {
     const [category, setCategory] = useState("");
     const [image, setImage] = useState("");
     const [uploading, setUploading] = useState(false);
+
+    const isAdmin = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "admin"
+            ? true
+            : false;
+    }, [cookies]);
 
     const createMutation = useMutation({
         mutationFn: addProduct,
@@ -45,15 +56,16 @@ function ProductAdd() {
 
     const handleAddNewProduct = async (event) => {
         event.preventDefault();
-        createMutation.mutate(
-            JSON.stringify({
+        createMutation.mutate({
+            data: JSON.stringify({
                 name: name,
                 description: description,
                 price: price,
                 category: category,
                 image: image,
-            })
-        );
+            }),
+            token: currentUser ? currentUser.token : "",
+        });
     };
 
     const uploadMutaion = useMutation({
@@ -126,7 +138,7 @@ function ProductAdd() {
                 <TextInput
                     value={description}
                     placeholder="Enter the movie description here"
-                    label="Director"
+                    label="Description"
                     description="The description of the movie"
                     withAsterisk
                     onChange={(event) => setDescription(event.target.value)}
@@ -155,9 +167,11 @@ function ProductAdd() {
                     onChange={(event) => setCategory(event.target.value)}
                 />
                 <Space h="20px" />
-                <Button fullWidth onClick={handleAddNewProduct}>
-                    Add New Product
-                </Button>
+                {isAdmin ? (
+                    <Button fullWidth onClick={handleAddNewProduct}>
+                        Add New Product
+                    </Button>
+                ) : null}
             </Card>
             <Space h="20px" />
             <Group position="center">

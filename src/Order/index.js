@@ -13,58 +13,31 @@ import {
     Grid,
     Text,
     Select,
+    LoadingOverlay,
 } from "@mantine/core";
+import { Checkbox } from "@mantine/core";
 import { useNavigate, Link } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
 import Header from "../Header";
-import { fetchOrders, getOrder, deleteOrder, updateStatus } from "../api/order";
+import { useCookies } from "react-cookie";
+import { fetchOrders, deleteOrder, updateOrder } from "../api/order";
 
 export default function Orders() {
+    const [cookies] = useCookies(["currentUser"]);
+    const { currentUser } = cookies;
     const queryClient = useQueryClient();
-    const navigate = useNavigate();
-    const [status, setStatus] = useState("");
-
-    const { data: orders = [] } = useQuery({
+    const { isLoading, data: orders = [] } = useQuery({
         queryKey: ["orders"],
-        queryFn: fetchOrders,
+        queryFn: () => fetchOrders(currentUser ? currentUser.token : ""),
     });
 
-    const { isLoading } = useQuery({
-        queryKey: ["order", orders._id],
-        queryFn: () => getOrder(orders._id),
-        onSuccess: (data) => {
-            setStatus(data.status);
-        },
-    });
-
-    const updateMutation = useMutation({
-        mutationFn: updateStatus,
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ["orders"],
-            });
-            notifications.show({
-                title: "Order Edited",
-                color: "green",
-            });
-            navigate("/orders");
-        },
-        onError: (error) => {
-            notifications.show({
-                title: error.response.data.message,
-                color: "red",
-            });
-        },
-    });
-
-    const handleUpdateStatus = async (o, item) => {
-        updateMutation.mutate({
-            id: o._id,
-            data: JSON.stringify({
-                status: item,
-            }),
-        });
-    };
+    const isAdmin = useMemo(() => {
+        return cookies &&
+            cookies.currentUser &&
+            cookies.currentUser.role === "admin"
+            ? true
+            : false;
+    }, [cookies]);
 
     const deleteMutation = useMutation({
         mutationFn: deleteOrder,
@@ -78,21 +51,41 @@ export default function Orders() {
             });
         },
     });
+
+    const updateMutation = useMutation({
+        mutationFn: updateOrder,
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["orders"],
+            });
+            notifications.show({
+                title: "Status Edited",
+                color: "green",
+            });
+        },
+        onError: (error) => {
+            notifications.show({
+                title: error.response.data.message,
+                color: "red",
+            });
+        },
+    });
+
     return (
         <>
-            <Container size="xl">
-                <Space h="50px" />
+            <Container size="100%">
                 <Header title="My Orders" page="orders" />
                 <Space h="35px" />
+                {/* <LoadingOverlay visible={isLoading} /> */}
                 <Table>
                     <thead>
                         <tr>
-                            <th>Order ID</th>
-                            <th colSpan={2}>Products</th>
+                            <th>Customer</th>
+                            <th>Products</th>
                             <th>Total Amount</th>
                             <th>Status</th>
                             <th>Payment Date</th>
-                            <th>Actions</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -108,48 +101,44 @@ export default function Orders() {
                                               {o.products.map(
                                                   (product, index) => (
                                                       <div key={index}>
-                                                          {product.image &&
-                                                          product.image !==
-                                                              "" ? (
-                                                              <>
+                                                          <Group>
+                                                              {product.image &&
+                                                              product.image !==
+                                                                  "" ? (
+                                                                  <>
+                                                                      <Image
+                                                                          src={
+                                                                              "http://localhost:5000/" +
+                                                                              product.image
+                                                                          }
+                                                                          width="50px"
+                                                                      />
+                                                                  </>
+                                                              ) : (
                                                                   <Image
                                                                       src={
-                                                                          "http://localhost:5000/" +
-                                                                          product.image
+                                                                          "https://www.aachifoods.com/templates/default-new/images/no-prd.jpg"
                                                                       }
-                                                                      width="60px"
+                                                                      width="50px"
                                                                   />
-                                                              </>
-                                                          ) : (
-                                                              <Image
-                                                                  src={
-                                                                      "https://www.aachifoods.com/templates/default-new/images/no-prd.jpg"
-                                                                  }
-                                                                  width="60px"
-                                                              />
-                                                          )}
+                                                              )}
+                                                              <p>
+                                                                  {product.name}
+                                                              </p>
+                                                          </Group>
                                                       </div>
                                                   )
                                               )}
                                           </td>
-                                          <td>
-                                              {o.products.map(
-                                                  (product, index) => (
-                                                      <div key={index}>
-                                                          <p>{product.name}</p>
-                                                      </div>
-                                                  )
-                                              )}
-                                          </td>
-                                          <td>{o.totalPrice}</td>
+                                          <td>${o.totalPrice}</td>
                                           <td>
                                               <Select
                                                   value={o.status}
-                                                  onChange={(item) =>
-                                                      handleUpdateStatus(
-                                                          o,
-                                                          item
-                                                      )
+                                                  disabled={
+                                                      o.status === "Pending" ||
+                                                      !isAdmin
+                                                          ? true
+                                                          : false
                                                   }
                                                   data={[
                                                       {
@@ -170,45 +159,57 @@ export default function Orders() {
                                                           label: "Shipped",
                                                       },
                                                       {
-                                                          value: "Devlivered",
-                                                          label: "Devlivered",
+                                                          value: "Delivered",
+                                                          label: "Delivered",
                                                       },
                                                   ]}
-                                                  defaultValue={o.status}
-                                                  disabled={
-                                                      o.status === "Pending"
-                                                          ? true
-                                                          : false
-                                                  }
+                                                  onChange={(newValue) => {
+                                                      updateMutation.mutate({
+                                                          id: o._id,
+                                                          data: JSON.stringify({
+                                                              status: newValue,
+                                                          }),
+                                                          token: currentUser
+                                                              ? currentUser.token
+                                                              : "",
+                                                      });
+                                                  }}
                                               />
                                           </td>
                                           <td>{o.paid_at}</td>
                                           <td>
-                                              {o.status === "Pending" ? (
-                                                  <Button
-                                                      variant="outline"
-                                                      color="red"
-                                                      onClick={() => {
-                                                          deleteMutation.mutate(
-                                                              o._id
-                                                          );
-                                                      }}
-                                                  >
-                                                      Delete
-                                                  </Button>
-                                              ) : (
-                                                  ""
-                                              )}
+                                              {o.status === "Pending" &&
+                                                  isAdmin && (
+                                                      <Button
+                                                          variant="outline"
+                                                          color="red"
+                                                          onClick={() => {
+                                                              deleteMutation.mutate(
+                                                                  {
+                                                                      id: o._id,
+                                                                      token: currentUser
+                                                                          ? currentUser.token
+                                                                          : "",
+                                                                  }
+                                                              );
+                                                          }}
+                                                      >
+                                                          Delete
+                                                      </Button>
+                                                  )}
                                           </td>
                                       </tr>
                                   );
                               })
                             : null}
                     </tbody>
+                </Table>
+                <Space h="20px" />
+                <Group position="center">
                     <Button component={Link} to="/">
                         Continue Shopping
                     </Button>
-                </Table>
+                </Group>
                 <Space h="100px" />
             </Container>
         </>
