@@ -108,7 +108,7 @@ function ProductAdd() {
                 {image && image !== "" ? (
                     <>
                         <Image
-                            src={"http://localhost:5000/" + image}
+                            src={"http://10.1.104.8:5000/" + image}
                             width="100%"
                         />
                         <Button
